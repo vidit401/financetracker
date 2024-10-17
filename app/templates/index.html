@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <h1>Finance Tracker</h1>
+
+    <form action="{{ url_for('add_transaction') }}" method="POST">
+        <label for="type">Transaction Type:</label>
+        <select name="type" id="type" required>
+            <option value="Income">Income</option>
+            <option value="Expense">Expense</option>
+        </select>
+
+        <label for="category">Category:</label>
+        <input type="text" id="category" name="category" placeholder="E.g., Food, Rent" required>
+
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" name="amount" step="0.01" placeholder="Enter amount" required>
+
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required>
+
+        <button type="submit">Add Transaction</button>
+    </form>
+
+    <h2>Transaction History</h2>
+    <ul>
+        {% for transaction in transactions %}
+        <li>
+            {{ transaction[4] }} - {{ transaction[1] }}: ₹{{ transaction[3] }} (Category: {{ transaction[2] }})
+        </li>
+        {% endfor %}
+    </ul>
+
+    <form action="{{ url_for('clear_history') }}" method="POST" style="text-align: center;">
+        <button type="submit" class="clear-history-button">Clear History</button>
+    </form>
+
+    <h2>Transaction Chart</h2>
+    <canvas id="expenseChart" width="400" height="200"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        fetch("{{ url_for('data') }}")
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+
+            // Map colors to transaction types
+            const colors = data.types.map(type => type === 'Income' ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.types,
+                    datasets: [{
+                        label: 'Amount (₹)',
+                        data: data.amounts,
+                        backgroundColor: colors,
+                        borderColor: colors.map(color => color.replace('1)', '0.8)')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Amount (₹)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Transaction Type'
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    </script>
+    
+</body>
+</html>
